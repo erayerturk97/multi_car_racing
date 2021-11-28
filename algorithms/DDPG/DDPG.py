@@ -19,18 +19,17 @@ from config_default import *
 
 class DDPGTesterAgent(TesterAgent):
     def __init__(self,
-                 env,
                  save_path='../../.',
                  **kwargs
                  ):
 
         super().__init__(**kwargs)
-        self.env = env
         self.agent = self._load_model(save_path)
 
     def _load_model(self, save_path):
         noise_type = 'ou'
-        noise_std = '0.8,0.2'
+        noise_std = np.array([0.0,0.4], dtype=np.float32)
+        noise_mean = np.array([0.0, -0.1], dtype=np.float32)
         action_dim = 2
         state_shape = (96,96,3)
 
@@ -39,11 +38,11 @@ class DDPGTesterAgent(TesterAgent):
         train_or_test = 'test'
         ckpt_load = 1253
 
-        config_write = dict(noise_type=noise_type, noise_std=noise_std, decay_noise_rate=decay_noise_rate, decay_noise_steps=decay_noise_steps, train_or_test=train_or_test, ckpt_load=ckpt_load, action_dim=action_dim)
+        config_write = dict(noise_type=noise_type, noise_std=noise_std, noise_mean=noise_mean, decay_noise_rate=decay_noise_rate, decay_noise_steps=decay_noise_steps, train_or_test=train_or_test, ckpt_load=ckpt_load, action_dim=action_dim)
         config = set_config_default_DDPG()
         config = add_settings_to_config(config, config_write)
 
-        agent = DDPG(config, state_shape, self.env)
+        agent = DDPG(config, state_shape)
         return agent
 
 
@@ -76,11 +75,10 @@ class DDPGTesterAgent(TesterAgent):
 
 class DDPG(object):
 
-    def __init__(self, config, state_shape, env):
+    def __init__(self, config, state_shape):
 
         self.config = config
         self.state_shape = state_shape
-        self.env = env
         if len(self.state_shape) != 3 or not isinstance(self.state_shape, tuple):
             assert 1==0, 'State shape must be tuple and of length 3, check if both correct!'
 
@@ -300,7 +298,7 @@ class DDPG(object):
             action = [action_before[0], action_before[1], action_before[2]]
             action[0] *= right_left
 
-        action = np.clip(np.array(action), a_min=self.env.action_space.low, a_max=self.env.action_space.high)
+        action = np.clip(np.array(action), a_min=[-1, 0, 0], a_max=[1,1,1])
         return action, action_before
 
 

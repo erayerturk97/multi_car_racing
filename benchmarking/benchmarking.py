@@ -44,7 +44,7 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument(
         "--algo",
-        default='dqn',
+        default='ddpg',
         choices=("a3c", "dqn", "ddpg", "ddqn", "ppo", "hc"),
         type=str,
         help="Select algorithm.",
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--render",
         action='store_true',
-        default=False,
+        default=True,
         help="Render episodes during test.",
     )
     parser.add_argument(

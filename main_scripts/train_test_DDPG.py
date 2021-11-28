@@ -123,7 +123,7 @@ if __name__=="__main__":
     STATE_H = 84   # less than Atari 160x192
     STATE_W = 96
     state_shape = (STATE_H, STATE_W, 3)
-    agent = DDPG(config, state_shape, env)
+    agent = DDPG(config, state_shape)
     
     if train_or_test == 'train':
 

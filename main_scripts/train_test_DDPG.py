@@ -12,7 +12,7 @@ sys.path.append(os.path.join(main_proj_dir, 'algorithms', 'DDPG'))
 sys.path.append(os.path.join(main_proj_dir, 'tools'))
 import argparse
 from aux_functions import *
-from config_default import *
+from config_default_DDPG import *
 from DDPG import *
 from multi_car_racing import *
 
@@ -62,7 +62,7 @@ if __name__=="__main__":
     parser.add_argument('--train_or_test', type=str, default='train', help='Whether to train or load a model')
     parser.add_argument('--test_eps', type=int, default=1, help='Number of episodes to test the model')
     parser.add_argument('--ckpt_load', type=int, default=-1, help='Number of checkpoint to load (put negative int not to load a checkpoint')
-    parser.add_argument('--create_gif', type=str2bool, nargs='?', const=True, default=True, help='Whether to create gif during testing')
+    parser.add_argument('--make_gif', type=str2bool, nargs='?', const=True, default=True, help='Whether to create gif during testing')
 
     # get the arguments
     args = parser.parse_args()
@@ -102,6 +102,7 @@ if __name__=="__main__":
     ckpt_load = args.ckpt_load
     test_eps = args.test_eps
     patience = args.patience
+    make_gif = args.make_gif
 
     # create the config to overwrite to default one
     config_write = dict(noise_type=noise_type, noise_std=noise_std, noise_mean=noise_mean, noise_scale=noise_scale, action_dim=action_dim, tau=tau, gamma=gamma, max_memory_size=max_memory_size, 
@@ -248,7 +249,8 @@ if __name__=="__main__":
                 break
 
     else:
-        frames = []
+        if make_gif:
+            frames = []
         env.reset()
 
         if render:
@@ -268,7 +270,8 @@ if __name__=="__main__":
 
             while not ep_done:
                 # get the video frame and append to frames
-                frames.append(env.render('rgb_array'))
+                if make_gif:
+                    frames.append(env.render('rgb_array'))
 
                 # render the env if requested
                 if render:
@@ -307,5 +310,6 @@ if __name__=="__main__":
                 print('Creating the gif for the episode...')
         
         # create the gif out of the episode
-        create_gif(frames, interval=100, dpi=80, save_path=os.path.join(main_directory, 'gifs', 'DDPG.gif'))
+        if make_gif:
+            create_gif(frames, interval=100, dpi=80, save_path=os.path.join(main_directory, 'gifs', 'DDPG.gif'), agent_id=0)
 

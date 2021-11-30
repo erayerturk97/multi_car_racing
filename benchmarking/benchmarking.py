@@ -47,7 +47,7 @@ if __name__ == "__main__":
         "--algo",
         type=str,
         nargs='+',
-        help='List of select algorithms. Options: a3c, dqn, ddpg, ddqn, ppo, hc',
+        help='List of select algorithms. Options: a3c, dqn, ddpg, ddqn, ppo, hc'
     )
     parser.add_argument(
         "--num_test_episodes",
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--render",
         action='store_true',
-        default=False,
+        default=True,
         help="Render episodes during test.",
     )
     parser.add_argument(
@@ -76,8 +76,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--num_cars",
         type=int,
-        help="Number of cars. Only used if a single algorithm is selected.ß ",
-        default=1
+        help="Number of cars. Only used if a single algorithm is selected.",
+        default=2
     )
     parser.add_argument(
         "--output_folder",
@@ -85,6 +85,7 @@ if __name__ == "__main__":
         default='results',
         help='Folder to save log files',
     )
+
     args = parser.parse_args()
     agents = []
     args.algo = args.algo * args.num_cars if len(args.algo) == 1 else args.algo

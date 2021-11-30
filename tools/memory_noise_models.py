@@ -65,22 +65,29 @@ class NoiseGenerator:
 
 
 class ReplayBuffer(object):
-    def __init__(self, max_memory_size, state_shape, action_dim):
+    def __init__(self, max_memory_size, state_shape, action_dim, num_agents):
         self.state_shape = state_shape
         self.action_dim = action_dim
         self.max_memory_size = max_memory_size
-
+        self.num_agents = num_agents
         # check the state shape
         if len(self.state_shape) != 3 or not isinstance(self.state_shape, tuple):
             assert 1==0, 'State shape must be tuple and of length 3, check if both correct!'
 
         # initialize the buffers
         self.num_pix_w, self.num_pix_h, self.num_ch = self.state_shape
-        self.states = np.zeros((self.max_memory_size, self.num_pix_w,self.num_pix_h, self.num_ch))
-        self.actions = np.zeros((self.max_memory_size, self.action_dim))
-        self.rewards = np.zeros((self.max_memory_size, 1))
-        self.next_states = np.zeros((self.max_memory_size, self.num_pix_w,self.num_pix_h, self.num_ch))
-        self.terminals = np.zeros((self.max_memory_size, ))
+        if self.num_agents != 1:
+            self.states = np.zeros((self.max_memory_size, self.num_agents, self.num_pix_w, self.num_pix_h, self.num_ch))
+            self.actions = np.zeros((self.max_memory_size, self.num_agents, self.action_dim))
+            self.rewards = np.zeros((self.max_memory_size, self.num_agents))
+            self.next_states = np.zeros((self.max_memory_size, self.num_agents, self.num_pix_w ,self.num_pix_h, self.num_ch))
+            self.terminals = np.zeros((self.max_memory_size, ))
+        else:
+            self.states = np.zeros((self.max_memory_size, self.num_pix_w,self.num_pix_h, self.num_ch))
+            self.actions = np.zeros((self.max_memory_size, self.action_dim))
+            self.rewards = np.zeros((self.max_memory_size, 1))
+            self.next_states = np.zeros((self.max_memory_size, self.num_pix_w ,self.num_pix_h, self.num_ch))
+            self.terminals = np.zeros((self.max_memory_size, ))
 
         # current size of the buffers
         self.cur_size = 0
@@ -91,11 +98,9 @@ class ReplayBuffer(object):
 
         pr_state = process_image(state)
         pr_next_state = process_image(next_state)
-        # self.states[ind] = (state.reshape(self.num_pix_w, self.num_pix_h, self.num_ch) - np.min(state))/ (np.max(state) - np.min(state))
         self.states[ind] = pr_state
         self.actions[ind] = action
         self.rewards[ind] = reward
-        # self.next_states[ind] = (next_state.reshape(self.num_pix_w, self.num_pix_h, self.num_ch) - np.min(next_state)) / (np.max(next_state) - np.min(next_state))
         self.next_states[ind] = pr_next_state
         self.terminals[ind] = terminal
 
@@ -106,10 +111,14 @@ class ReplayBuffer(object):
         sample_size = min(self.cur_size, self.max_memory_size)
         sampled_indexes = np.random.choice(sample_size, batch_size)
 
-        return self.states[sampled_indexes, :, :, :], self.actions[sampled_indexes, : ],\
-               self.rewards[sampled_indexes, :], self.next_states[sampled_indexes, :, :, :],\
-               self.terminals[sampled_indexes]
-
+        if self.num_agents == 1:
+            return self.states[sampled_indexes, :, :, :], self.actions[sampled_indexes, : ],\
+                self.rewards[sampled_indexes, :], self.next_states[sampled_indexes, :, :, :],\
+                self.terminals[sampled_indexes]
+        else:
+            return self.states[sampled_indexes, :, :, :, :], self.actions[sampled_indexes, : , :],\
+                self.rewards[sampled_indexes, :], self.next_states[sampled_indexes, :, :, :],\
+                self.terminals[sampled_indexes]
 
 
 # [reference] https://github.com/matthiasplappert/keras-rl/blob/master/rl/memory.py

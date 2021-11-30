@@ -2,8 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os, sys, random 
 import tensorflow as tf
+import tensorflow_probability as tfp
 from tensorflow_probability.python.distributions import MultivariateNormalTriL
-
+# sys.path.insert(0, '../benchmarking')
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'benchmarking'))
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'tools'))
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'gym_multi_car_racing'))
@@ -13,24 +14,21 @@ from gym import spaces
 from aux_functions import *
 from multi_car_racing import *
 from memory_noise_models import *
-from config_default import *
+from config_default_DDPG import *
 
-MODEL_PATH_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'saved_models/DDPG')
 
 class DDPGTesterAgent(TesterAgent):
     def __init__(self,
-                 save_path=MODEL_PATH_ROOT,
-                 car_id=0,
+                 save_path='../../.',
                  **kwargs
                  ):
 
         super().__init__(**kwargs)
         self.agent = self._load_model(save_path)
-        self.car_id = car_id
 
     def _load_model(self, save_path):
         noise_type = 'ou'
-        noise_std = [0.0, 0.4]
+        noise_std = np.array([0.0,0.4], dtype=np.float32)
         noise_mean = np.array([0.0, -0.1], dtype=np.float32)
         action_dim = 2
         state_shape = (96,96,3)
@@ -40,15 +38,7 @@ class DDPGTesterAgent(TesterAgent):
         train_or_test = 'test'
         ckpt_load = 1253
 
-        config_write = dict(noise_type=noise_type,
-                            noise_std=noise_std,
-                            noise_mean=noise_mean,
-                            decay_noise_rate=decay_noise_rate,
-                            decay_noise_steps=decay_noise_steps,
-                            train_or_test=train_or_test,
-                            ckpt_load=ckpt_load,
-                            action_dim=action_dim,
-                            directory_to_save=save_path)
+        config_write = dict(noise_type=noise_type, noise_std=noise_std, noise_mean=noise_mean, decay_noise_rate=decay_noise_rate, decay_noise_steps=decay_noise_steps, train_or_test=train_or_test, ckpt_load=ckpt_load, action_dim=action_dim)
         config = set_config_default_DDPG()
         config = add_settings_to_config(config, config_write)
 
@@ -63,7 +53,7 @@ class DDPGTesterAgent(TesterAgent):
         If you are using frame buffer see example in _update_frame_buffer
         how to take care of that.
         """
-        action, _ = self.agent.get_action(s, self.car_id)
+        action, _ = self.agent.get_action(s)
         return action/4
 
     
@@ -73,9 +63,6 @@ class DDPGTesterAgent(TesterAgent):
         This should be the same action space setup function that you used for training.
         Make sure that the actions set here are the same as the ones used to train the model.
         """
-        env.action_lb = np.tile(np.array([-1,+0,+0]), env.num_agents)
-        env.action_ub = np.tile(np.array([+1,+1,+1]), env.num_agents)
-
         env.action_space = spaces.Box( env.action_lb, env.action_ub, dtype=np.float32)  # (steer, gas, brake) x N
 
     @staticmethod
@@ -106,7 +93,7 @@ class DDPG(object):
         self.batch_size = self.config['batch_size']
 
         self.max_to_keep = self.config['max_to_keep']
-        self.model_save_suffices = ['actor', 'critic', 'target_actor', 'target_critic']
+        self.model_save_suffices = ['saved_models/DDPG/actor', 'saved_models/DDPG/critic', 'saved_models/DDPG/target_actor', 'saved_models/DDPG/target_critic']
         self.model_save_paths = dict(actor_path='{}/{}'.format(self.config['directory_to_save'], self.model_save_suffices[0]), critic_path='{}/{}'.format(self.config['directory_to_save'], self.model_save_suffices[1]),
                                      target_actor_path='{}/{}'.format(self.config['directory_to_save'], self.model_save_suffices[2]), target_critic_path='{}/{}'.format(self.config['directory_to_save'], self.model_save_suffices[3]))
 
@@ -291,12 +278,12 @@ class DDPG(object):
             return self.noise.sample(sample_shape=1).numpy().reshape(-1, )
 
 
-    def get_action(self, state, car_id=0):
+    def get_action(self, state):
         # if len(state.shape) == 3:
         #     num_pix_w, num_pix_h, num_ch = state.shape
         #     state = (state.reshape(1, num_pix_w, num_pix_h, num_ch) - np.min(state)) / (np.max(state) - np.min(state))
         
-        state = process_image(state, car_id)
+        state = process_image(state)
 
         # get the action from actor network
         action_before = self.actor_model(np.expand_dims(state, axis=0), training=False).numpy()
@@ -311,7 +298,7 @@ class DDPG(object):
             action = [action_before[0], action_before[1], action_before[2]]
             action[0] *= right_left
 
-        action = np.clip(np.array(action), a_min=-1.0, a_max=1.0)
+        action = np.clip(np.array(action), a_min=[-1, 0, 0], a_max=[1,1,1])
         return action, action_before
 
 
@@ -408,7 +395,6 @@ class DDPG(object):
             tf.summary.scalar(name=prefix + 'step_reward', data=tf.constant(step_reward, dtype=tf.float32), step=step)
 
     
-
 
 
 

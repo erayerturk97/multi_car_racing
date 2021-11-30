@@ -73,45 +73,45 @@ def get_grayscale_from_green(image):
 
     return img[:, 1]
 
-def process_image(image, car_id):
+def process_image(image):
     # 204 for dark green, 229 for light green, 204 for car red
     # crop 12 pixels from height
-    image = np.expand_dims(image[car_id, ...], axis=0)
-    img = image.copy()
+    img_all = image.copy()
+    num_cars, height, width, ch = (image.shape[-4], image.shape[-3], image.shape[-2], image.shape[-1])
+    
+    img_return = np.zeros((num_cars, height-12, width, ch))
+    for i in range(num_cars):
+        img = img_all[i, :, :, :]
 
-    height, width, ch = (image.shape[-3], image.shape[-2], image.shape[-1])
-    img = np.reshape(image, (height, width, ch))
+        # make light green to dark green
+        light_green_ind = np.where(img[:, :, 1] == 229)
+        img[light_green_ind[0], light_green_ind[1], 1] = 204
 
-    # make light green to dark green
-    light_green_ind = np.where(img[:, :, 1] == 229)
-    img[light_green_ind[0], light_green_ind[1], 1] = 204
+        # crop score field 
+        img = img[:height-12, :, :]
 
-    # crop score field
-    # img = img[:height-12, :, :]
+        # Remove numbers and enlarge speed bar
+        # for j in range(88, 94):
+        #     img[j, 0:12, :] = img[j, 12, :]
 
-    # Remove numbers and enlarge speed bar
-    # for i in range(88, 94):
-    #     img[i, 0:12, :] = img[i, 12, :]
+        # make curbs white
+        curb_ind = np.where(img[:, :, 0] == 255)
+        img[curb_ind[0], curb_ind[1], :] = 255
 
-    # make car black
-    # car_ind = np.where(img[:, :, 0] == 204)
-    # img[car_ind[0], car_ind[1], :] = 0
+        # Scale between 0 and 1
+        img = (img - np.min(img)) / (np.max(img) - np.min(img))
 
-    # make curbs white
-    curb_ind = np.where(img[:, :, 0] == 255)
-    img[curb_ind[0], curb_ind[1], :] = 255
+        img_return[i, :, :, :] = img
 
-    # Scale between 0 and 1
-    img = (img - np.min(img)) / (np.max(img) - np.min(img))
-    return img
+    return img_return
 
 
-def create_gif(frames, interval, dpi, save_path):
+def create_gif(frames, interval, dpi, save_path, agent_id):
 
     width, height, num_ch = frames[0].shape[-3], frames[0].shape[-2], frames[0].shape[-1]
     with imageio.get_writer(save_path, mode='I') as writer:
         for i in range(len(frames)):
-            writer.append_data(frames[i].reshape(width, height, num_ch))
+            writer.append_data(frames[i][agent_id].reshape(width, height, num_ch))
 
     # fig = plt.figure()
     # ax = plt.imshow(frames[0].reshape(width, height, num_ch), cmap='viridis')

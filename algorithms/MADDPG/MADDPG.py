@@ -263,9 +263,9 @@ class MADDPG(object):
         multistate_shape = (self.state_shape[0], self.state_shape[1], self.state_shape[2]*self.num_cars)
 
         input_layer_state = tf.keras.Input(shape=multistate_shape)
-        net_state = tf.keras.layers.Conv2D(filters=32, kernel_size=(5,5), strides=(4,4), padding='valid', use_bias=False, activation='relu', kernel_initializer=self.initializer_layer)(input_layer_state)
-        net_state = tf.keras.layers.Conv2D(filters=64, kernel_size=(3,3), strides=(3,3), padding='valid', use_bias=False, activation='relu', kernel_initializer=self.initializer_layer)(net_state)
-        net_state = tf.keras.layers.Conv2D(filters=64, kernel_size=(3,3), strides=(3,3), padding='valid', use_bias=False, activation='relu', kernel_initializer=self.initializer_layer)(net_state)
+        net_state = tf.keras.layers.Conv2D(filters=16*self.num_cars, kernel_size=(5,5), strides=(4,4), padding='valid', use_bias=False, activation='relu', kernel_initializer=self.initializer_layer)(input_layer_state)
+        net_state = tf.keras.layers.Conv2D(filters=32*self.num_cars, kernel_size=(3,3), strides=(3,3), padding='valid', use_bias=False, activation='relu', kernel_initializer=self.initializer_layer)(net_state)
+        net_state = tf.keras.layers.Conv2D(filters=32*self.num_cars, kernel_size=(3,3), strides=(3,3), padding='valid', use_bias=False, activation='relu', kernel_initializer=self.initializer_layer)(net_state)
         net_state = tf.keras.layers.Flatten()(net_state)
 
         # pass action thru network
@@ -274,8 +274,9 @@ class MADDPG(object):
 
         # concatenate action and state outs, pass thru the network
         net_together = tf.keras.layers.Concatenate()([net_state, net_action])
-        net_together = tf.keras.layers.Dense(128, activation='relu', kernel_initializer=self.initializer_layer)(net_together)
-        net_together = tf.keras.layers.Dense(64, activation='relu', kernel_initializer=self.initializer_layer)(net_together)
+        
+        for i in range(self.num_cars):
+            net_together = tf.keras.layers.Dense(32*(2**(self.num_cars - i)), activation='relu', kernel_initializer=self.initializer_layer)(net_together)
         net_together = tf.keras.layers.Dense(32, activation='relu', kernel_initializer=self.initializer_layer)(net_together)
         
         # get the output

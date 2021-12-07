@@ -29,8 +29,8 @@ if __name__=="__main__":
     parser.add_argument('--num_cars', type=int, default=2, help='Number of cars to train the agent')
     parser.add_argument('--render', type=str2bool, nargs='?', const=True, default=True, help='Whether to display the game on the screen during training')
     parser.add_argument('--num_episodes', type=int, default=4000, help='Number of episodes to play the game')
-    parser.add_argument('--max_episode_length', type=int, default=1000, help='Max number of timesteps for a single episode')
-    parser.add_argument('--skip_frames', type=int, default=2, help='Number of frames to execute a single action taken by actor network')
+    parser.add_argument('--max_episode_length', type=int, default=2500, help='Max number of timesteps for a single episode')
+    parser.add_argument('--skip_frames', type=int, default=1, help='Number of frames to execute a single action taken by actor network')
     parser.add_argument('--max_neg_steps', type=int, default=200, help='Maximum number of consecutive negative steps w/ nonpositive reward to terminate the episode')
     parser.add_argument('--patience', type=int, default=1000, help='Patience for early stoping callback')
 
